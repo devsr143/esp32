@@ -13,9 +13,6 @@ class ScratchProgramViewModel extends ChangeNotifier {
 
   final int selectedClass;
 
-  // ============================================================
-  // ESP32 SETTINGS
-  // ============================================================
 
   static const int turnDuration90Milliseconds = 1155;
   static const int actionCooldownMilliseconds = 400;
@@ -54,7 +51,7 @@ class ScratchProgramViewModel extends ChangeNotifier {
     CommandType.left,
     CommandType.right,
     CommandType.circle,
-    CommandType.stop,
+    // CommandType.stop,
     CommandType.loop,
     CommandType.delay,
   ];

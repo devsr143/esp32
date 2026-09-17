@@ -4,7 +4,7 @@ import 'package:esp32/application/view_model/scratch_program_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class ScratchProgramPage extends StatelessWidget {
+class ScratchProgramPage extends StatefulWidget {
   const ScratchProgramPage({
     super.key,
     required this.selectedClass,
@@ -12,6 +12,11 @@ class ScratchProgramPage extends StatelessWidget {
 
   final int selectedClass;
 
+  @override
+  State<ScratchProgramPage> createState() => _ScratchProgramPageState();
+}
+
+class _ScratchProgramPageState extends State<ScratchProgramPage> {
   @override
   Widget build(BuildContext context) {
     return const _ScratchProgramView();

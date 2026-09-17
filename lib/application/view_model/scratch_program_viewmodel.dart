@@ -2,7 +2,6 @@ import 'package:esp32/application/model/program_block.dart';
 import 'package:esp32/application/service/robot_command_service.dart';
 import 'package:flutter/material.dart';
 
-
 class ScratchProgramViewModel extends ChangeNotifier {
   ScratchProgramViewModel({
     Esp32CommandService? service,
@@ -12,7 +11,6 @@ class ScratchProgramViewModel extends ChangeNotifier {
   final Esp32CommandService _service;
 
   final int selectedClass;
-
 
   static const int turnDuration90Milliseconds = 1155;
   static const int actionCooldownMilliseconds = 400;
@@ -51,7 +49,6 @@ class ScratchProgramViewModel extends ChangeNotifier {
     CommandType.left,
     CommandType.right,
     CommandType.circle,
-    // CommandType.stop,
     CommandType.loop,
     CommandType.delay,
   ];
@@ -127,8 +124,7 @@ class ScratchProgramViewModel extends ChangeNotifier {
   }
 
   bool needsDegrees(CommandType type) {
-    return type == CommandType.left ||
-        type == CommandType.right;
+    return type == CommandType.left || type == CommandType.right;
   }
 
   // ============================================================
@@ -223,38 +219,46 @@ class ScratchProgramViewModel extends ChangeNotifier {
     _status = 'Class $selectedClass program started.';
     notifyListeners();
 
-    if (loopIndex == -1) {
-      await _executeBlocks(programSnapshot);
-      return;
-    }
-
-    final loopBlocks = programSnapshot.sublist(0, loopIndex);
-
-    if (loopBlocks.isEmpty) {
-      _finishExecution('Add at least one command before the loop.');
-      return;
-    }
-
-    _status = 'Infinite loop started.';
-    notifyListeners();
-
-    while (_isExecuting && !_stopRequested) {
-      for (final block in loopBlocks) {
-        if (!_isExecuting || _stopRequested) return;
-
-        final success = await _executeSingleBlock(block);
-
-        if (!success) {
-          _finishExecution(
-            'Program stopped because a command failed.',
-          );
-          return;
-        }
+    try {
+      if (loopIndex == -1) {
+        await _executeBlocks(programSnapshot);
+        return;
       }
 
-      if (_isExecuting && !_stopRequested) {
-        _status = 'Loop repeating...';
-        notifyListeners();
+      final loopBlocks = programSnapshot.sublist(0, loopIndex);
+
+      if (loopBlocks.isEmpty) {
+        _finishExecution('Add at least one command before the loop.');
+        return;
+      }
+
+      _status = 'Infinite loop started.';
+      notifyListeners();
+
+      while (_isExecuting && !_stopRequested) {
+        for (final block in loopBlocks) {
+          if (!_isExecuting || _stopRequested) return;
+
+          final success = await _executeSingleBlock(block);
+
+          if (!_isExecuting || _stopRequested) return;
+
+          if (!success) {
+            _finishExecution(
+              'Program stopped because a command failed.',
+            );
+            return;
+          }
+        }
+
+        if (_isExecuting && !_stopRequested) {
+          _status = 'Loop repeating...';
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      if (!_stopRequested) {
+        _finishExecution('Execution error: $e');
       }
     }
   }
@@ -265,14 +269,14 @@ class ScratchProgramViewModel extends ChangeNotifier {
 
       final success = await _executeSingleBlock(block);
 
+      if (!_isExecuting || _stopRequested) return;
+
       if (!success) {
         _finishExecution(
           'Program stopped because a command failed.',
         );
         return;
       }
-
-      if (!_isExecuting || _stopRequested) return;
 
       if (block.type == CommandType.stop) return;
     }
@@ -299,15 +303,15 @@ class ScratchProgramViewModel extends ChangeNotifier {
 
       final success = await _service.sendCommand(block);
 
-      _isExecuting = false;
-      _stopRequested = false;
-      _activeBlockId = null;
+      if (!_isExecuting || _stopRequested) {
+        return false;
+      }
 
-      _status = success
-          ? 'Stop block reached. Program ended.'
-          : 'Stop command failed.';
-
-      notifyListeners();
+      _finishExecution(
+        success
+            ? 'Stop block reached. Program ended.'
+            : 'Stop command failed.',
+      );
 
       return success;
     }
@@ -317,6 +321,13 @@ class ScratchProgramViewModel extends ChangeNotifier {
 
     final success = await _service.sendCommand(block);
 
+    // IMPORTANT:
+    // If Stop was pressed while the HTTP request was running,
+    // do not continue to the next command.
+    if (!_isExecuting || _stopRequested) {
+      return false;
+    }
+
     if (!success) {
       _status = 'Could not connect to ESP32.';
       notifyListeners();
@@ -325,7 +336,11 @@ class ScratchProgramViewModel extends ChangeNotifier {
 
     await _waitForCommandCompletion(block);
 
-    return !_stopRequested && _isExecuting;
+    if (!_isExecuting || _stopRequested) {
+      return false;
+    }
+
+    return true;
   }
 
   String _executionStatus(ProgramBlock block) {
@@ -425,19 +440,21 @@ class ScratchProgramViewModel extends ChangeNotifier {
   }
 
   // ============================================================
-  // STOP
+  // STOP EXECUTION
   // ============================================================
 
   Future<void> stopExecution() async {
     if (!_isExecuting) return;
 
+    // Immediately stop the Flutter execution loop.
     _stopRequested = true;
     _isExecuting = false;
     _activeBlockId = null;
-    _status = 'Stopping robot...';
 
+    _status = 'Stopping robot...';
     notifyListeners();
 
+    // Send the STOP command to ESP32.
     final stopBlock = ProgramBlock(
       id: -1,
       type: CommandType.stop,
@@ -447,7 +464,7 @@ class ScratchProgramViewModel extends ChangeNotifier {
 
     _status = success
         ? 'Execution stopped.'
-        : 'Stop command failed.';
+        : 'Robot stop command failed.';
 
     notifyListeners();
   }

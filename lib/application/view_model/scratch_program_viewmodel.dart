@@ -9,15 +9,11 @@ class ScratchProgramViewModel extends ChangeNotifier {
   }) : _service = service ?? Esp32CommandService();
 
   final Esp32CommandService _service;
-
   final int selectedClass;
 
   static const int turnDuration90Milliseconds = 1155;
   static const int actionCooldownMilliseconds = 400;
 
-  // ============================================================
-  // PROGRAM STATE
-  // ============================================================
 
   final List<ProgramBlock> _program = [];
 
@@ -39,10 +35,6 @@ class ScratchProgramViewModel extends ChangeNotifier {
   String _status = 'Drag blocks into the program area.';
   String get status => _status;
 
-  // ============================================================
-  // PALETTE
-  // ============================================================
-
   final List<CommandType> paletteBlocks = const [
     CommandType.forward,
     CommandType.backward,
@@ -52,10 +44,6 @@ class ScratchProgramViewModel extends ChangeNotifier {
     CommandType.loop,
     CommandType.delay,
   ];
-
-  // ============================================================
-  // LABEL / ICON / COLOR
-  // ============================================================
 
   String label(CommandType type) {
     switch (type) {
@@ -107,10 +95,8 @@ class ScratchProgramViewModel extends ChangeNotifier {
       case CommandType.right:
       case CommandType.circle:
         return const Color(0xFF4C97FF);
-
       case CommandType.stop:
         return const Color(0xFFE84B3C);
-
       case CommandType.loop:
       case CommandType.delay:
         return const Color(0xFFFFAB19);
@@ -126,10 +112,6 @@ class ScratchProgramViewModel extends ChangeNotifier {
   bool needsDegrees(CommandType type) {
     return type == CommandType.left || type == CommandType.right;
   }
-
-  // ============================================================
-  // PROGRAM EDITING
-  // ============================================================
 
   void insertBlockAt(CommandType type, int index) {
     if (_isExecuting) return;
@@ -193,9 +175,6 @@ class ScratchProgramViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ============================================================
-  // EXECUTION
-  // ============================================================
 
   Future<void> executeProgram() async {
     if (_isExecuting) return;
@@ -321,9 +300,6 @@ class ScratchProgramViewModel extends ChangeNotifier {
 
     final success = await _service.sendCommand(block);
 
-    // IMPORTANT:
-    // If Stop was pressed while the HTTP request was running,
-    // do not continue to the next command.
     if (!_isExecuting || _stopRequested) {
       return false;
     }
@@ -373,10 +349,6 @@ class ScratchProgramViewModel extends ChangeNotifier {
     }
   }
 
-  // ============================================================
-  // WAIT
-  // ============================================================
-
   Future<void> _waitForCommandCompletion(ProgramBlock block) async {
     int waitMilliseconds = 0;
 
@@ -425,10 +397,6 @@ class ScratchProgramViewModel extends ChangeNotifier {
     }
   }
 
-  // ============================================================
-  // TURN CALCULATION
-  // ============================================================
-
   int getTurnDuration(int selectedInteriorAngle) {
     final physicalTurnDegrees = 180 - selectedInteriorAngle;
 
@@ -439,14 +407,9 @@ class ScratchProgramViewModel extends ChangeNotifier {
     ).round();
   }
 
-  // ============================================================
-  // STOP EXECUTION
-  // ============================================================
-
   Future<void> stopExecution() async {
     if (!_isExecuting) return;
 
-    // Immediately stop the Flutter execution loop.
     _stopRequested = true;
     _isExecuting = false;
     _activeBlockId = null;
@@ -468,10 +431,6 @@ class ScratchProgramViewModel extends ChangeNotifier {
 
     notifyListeners();
   }
-
-  // ============================================================
-  // FINISH
-  // ============================================================
 
   void _finishExecution(String message) {
     _isExecuting = false;

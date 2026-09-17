@@ -1,8 +1,7 @@
 import 'package:esp32/application/model/program_block.dart';
 import 'package:flutter/material.dart';
 
-
-class CommandBlockWidget extends StatelessWidget {
+class CommandBlockWidget extends StatefulWidget {
   const CommandBlockWidget({
     super.key,
     required this.type,
@@ -31,8 +30,13 @@ class CommandBlockWidget extends StatelessWidget {
   final ValueChanged<double>? onSecondsChanged;
   final ValueChanged<int>? onDegreesChanged;
 
+  @override
+  State<CommandBlockWidget> createState() => _CommandBlockWidgetState();
+}
+
+class _CommandBlockWidgetState extends State<CommandBlockWidget> {
   String _label() {
-    switch (type) {
+    switch (widget.type) {
       case CommandType.forward:
         return 'forward';
       case CommandType.backward:
@@ -53,7 +57,7 @@ class CommandBlockWidget extends StatelessWidget {
   }
 
   IconData _icon() {
-    switch (type) {
+    switch (widget.type) {
       case CommandType.forward:
         return Icons.arrow_upward_rounded;
       case CommandType.backward:
@@ -74,7 +78,7 @@ class CommandBlockWidget extends StatelessWidget {
   }
 
   Color _color() {
-    switch (type) {
+    switch (widget.type) {
       case CommandType.forward:
       case CommandType.backward:
       case CommandType.left:
@@ -104,18 +108,12 @@ class CommandBlockWidget extends StatelessWidget {
           Container(
             height: 52,
             width: 300,
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 7,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
             decoration: BoxDecoration(
               color: blockColor,
               borderRadius: BorderRadius.circular(7),
-              border: isActive
-                  ? Border.all(
-                      color: Colors.white,
-                      width: 2.5,
-                    )
+              border: widget.isActive
+                  ? Border.all(color: Colors.white, width: 2.5)
                   : null,
               boxShadow: [
                 BoxShadow(
@@ -127,11 +125,7 @@ class CommandBlockWidget extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(
-                  _icon(),
-                  color: Colors.white,
-                  size: 20,
-                ),
+                Icon(_icon(), color: Colors.white, size: 20),
 
                 const SizedBox(width: 8),
 
@@ -146,15 +140,13 @@ class CommandBlockWidget extends StatelessWidget {
 
                 const Spacer(),
 
-                if (degrees != null)
-                  _buildDegreeInput(),
+                if (widget.degrees != null) _buildDegreeInput(),
 
-                if (seconds != null)
-                  _buildSecondsInput(),
+                if (widget.seconds != null) _buildSecondsInput(),
 
-                if (showDelete)
+                if (widget.showDelete)
                   IconButton(
-                    onPressed: onDelete,
+                    onPressed: widget.onDelete,
                     icon: const Icon(
                       Icons.close_rounded,
                       color: Colors.white,
@@ -170,7 +162,7 @@ class CommandBlockWidget extends StatelessWidget {
             ),
           ),
 
-          if (showTopConnector)
+          if (widget.showTopConnector)
             Positioned(
               top: 0,
               left: 20,
@@ -187,7 +179,7 @@ class CommandBlockWidget extends StatelessWidget {
               ),
             ),
 
-          if (showBottomConnector)
+          if (widget.showBottomConnector)
             Positioned(
               top: 51,
               left: 20,
@@ -211,7 +203,7 @@ class CommandBlockWidget extends StatelessWidget {
   Widget _buildDegreeInput() {
     return DropdownButtonHideUnderline(
       child: DropdownButton<int>(
-        value: degrees,
+        value: widget.degrees,
         isDense: true,
         items: const [
           DropdownMenuItem(value: 60, child: Text('60')),
@@ -221,7 +213,7 @@ class CommandBlockWidget extends StatelessWidget {
         ],
         onChanged: (value) {
           if (value != null) {
-            onDegreesChanged?.call(value);
+            widget.onDegreesChanged?.call(value);
           }
         },
       ),
@@ -233,20 +225,14 @@ class CommandBlockWidget extends StatelessWidget {
       width: 65,
       height: 30,
       child: TextField(
-        controller: TextEditingController(
-          text: seconds!.toString(),
-        ),
-        keyboardType: const TextInputType.numberWithOptions(
-          decimal: true,
-        ),
+        controller: TextEditingController(text: widget.seconds!.toString()),
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
         textAlign: TextAlign.center,
         onSubmitted: (value) {
           final parsed = double.tryParse(value);
 
           if (parsed != null) {
-            onSecondsChanged?.call(
-              parsed.clamp(1.0, 99.0),
-            );
+            widget.onSecondsChanged?.call(parsed.clamp(1.0, 99.0));
           }
         },
       ),

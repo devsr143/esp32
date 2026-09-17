@@ -8,18 +8,13 @@ class SetupViewModel extends ChangeNotifier {
   final WifiService _wifiService;
   final FirmwareService _firmwareService;
 
-  SetupViewModel({
-    WifiService? wifiService,
-    FirmwareService? firmwareService,
-  })  : _wifiService = wifiService ?? WifiService(),
-        _firmwareService = firmwareService ?? FirmwareService();
+  SetupViewModel({WifiService? wifiService, FirmwareService? firmwareService})
+    : _wifiService = wifiService ?? WifiService(),
+      _firmwareService = firmwareService ?? FirmwareService();
 
-  // ===========================================================================
-  // CLASS FIRMWARE FILES
-  // ===========================================================================
 
   final Map<int, String> classFirmwareFiles = {
-    3: 'assets/firmware/Shapes_Modified_3.ino.bin',
+    3: 'assets/firmware/Shapes_Modified_4.ino.bin',
     4: 'assets/firmware/class_4.bin',
     5: 'assets/firmware/class_5.bin',
     6: 'assets/firmware/class_6.bin',
@@ -29,9 +24,7 @@ class SetupViewModel extends ChangeNotifier {
     10: 'assets/firmware/class_10.bin',
   };
 
-  // ===========================================================================
-  // STATE
-  // ===========================================================================
+
 
   int selectedClass = 3;
 
@@ -47,20 +40,14 @@ class SetupViewModel extends ChangeNotifier {
 
   bool get isEsp32Connected => isWifiEnabled;
 
-  String? get selectedFirmwarePath =>
-      classFirmwareFiles[selectedClass];
+  String? get selectedFirmwarePath => classFirmwareFiles[selectedClass];
 
-  // ===========================================================================
-  // INITIAL CHECK
-  // ===========================================================================
 
   Future<void> initialize() async {
     await checkWifiStatus();
   }
 
-  // ===========================================================================
-  // WIFI STATUS
-  // ===========================================================================
+
 
   Future<void> checkWifiStatus() async {
     try {
@@ -153,9 +140,7 @@ class SetupViewModel extends ChangeNotifier {
   // ===========================================================================
 
   void selectClass(int? classNumber) {
-    if (classNumber == null ||
-        isUploadingFirmware ||
-        !isEsp32Connected) {
+    if (classNumber == null || isUploadingFirmware || !isEsp32Connected) {
       return;
     }
 
@@ -177,9 +162,7 @@ class SetupViewModel extends ChangeNotifier {
     final assetPath = classFirmwareFiles[selectedClass];
 
     if (assetPath == null) {
-      throw Exception(
-        'No BIN file found for Class $selectedClass.',
-      );
+      throw Exception('No BIN file found for Class $selectedClass.');
     }
 
     return await _firmwareService.loadFirmware(assetPath);

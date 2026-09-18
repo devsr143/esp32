@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../view_model/activity_list_viewmodel.dart';
 import '../model/activity_model.dart';
 
-class ActivityListPage extends StatelessWidget {
+class ActivityListPage extends StatefulWidget {
   const ActivityListPage({
     super.key,
     required this.selectedClass,
@@ -13,14 +13,33 @@ class ActivityListPage extends StatelessWidget {
   final int selectedClass;
 
   @override
+  State<ActivityListPage> createState() => _ActivityListPageState();
+}
+
+class _ActivityListPageState extends State<ActivityListPage> {
+  late int currentClass;
+
+  @override
+  void initState() {
+    super.initState();
+    currentClass = widget.selectedClass;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ActivityListViewModel>().loadActivities(currentClass);
+    });
+  }
+
+  void _onClassChanged(int newClass) {
+    setState(() {
+      currentClass = newClass;
+    });
+    context.read<ActivityListViewModel>().loadActivities(newClass);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) =>
-          ActivityListViewModel()
-            ..loadActivities(selectedClass),
-      child: _ActivityListView(
-        selectedClass: selectedClass,
-      ),
+    return _ActivityListView(
+      selectedClass: currentClass,
+      onClassChanged: _onClassChanged,
     );
   }
 }
@@ -28,9 +47,11 @@ class ActivityListPage extends StatelessWidget {
 class _ActivityListView extends StatelessWidget {
   const _ActivityListView({
     required this.selectedClass,
+    required this.onClassChanged,
   });
 
   final int selectedClass;
+  final ValueChanged<int> onClassChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -38,63 +59,90 @@ class _ActivityListView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Class $selectedClass Activities'),
-      ),
-      body: Stack(
-        children: [
-          if (vm.activities.isEmpty)
-            const Center(
-              child: Text(
-                'No activities available.',
-              ),
-            )
-          else
-            GridView.builder(
-              padding: const EdgeInsets.all(20),
-              itemCount: vm.activities.length,
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 1.1,
-              ),
-              itemBuilder: (context, index) {
-                final activity = vm.activities[index];
-
-                return _ActivityCard(
-                  activity: activity,
-                  onTap: () {
-                    _selectActivity(
-                      context,
-                      activity,
-                    );
-                  },
+        backgroundColor: Colors.black,
+        automaticallyImplyLeading: false,
+        title: Text('CLASS $selectedClass Activities',style: TextStyle(color: Colors.white),),
+        actions: [
+          PopupMenuButton<int>(
+            icon: const Icon(Icons.class_rounded, color: Colors.white),
+            tooltip: 'Change Class',
+            onSelected: onClassChanged,
+            itemBuilder: (context) {
+              return List.generate(8, (index) {
+                final classNum = index + 3;
+                return PopupMenuItem<int>(
+                  value: classNum,
+                  child: Text('Class $classNum'),
                 );
-              },
-            ),
-
-          if (vm.isSending)
-            Container(
-              color: Colors.black54,
-              child: const Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text(
-                      'Starting activity...',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
+              });
+            },
+          ),
+        ],
+      ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(image: AssetImage('assets/images/background/background.jpeg'),
+          fit: BoxFit.cover
+          )
+        ),
+        child: Stack(
+          children: [
+            if (vm.activities.isEmpty)
+              const Center(
+                child: Text(
+                  'No activities available.',
+                ),
+              )
+            else
+              GridView.builder(
+                padding: const EdgeInsets.all(20),
+                itemCount: vm.activities.length,
+                gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 1.1,
+                ),
+                itemBuilder: (context, index) {
+                  final activity = vm.activities[index];
+        
+                  return _ActivityCard(
+                    activity: activity,
+                    onTap: () {
+                      _selectActivity(
+                        context,
+                        activity,
+                      );
+                    },
+                  );
+                },
+              ),
+        
+            if (vm.isSending)
+              Container(
+                color: Colors.black54,
+                child: const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text(
+                        'Starting activity...',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

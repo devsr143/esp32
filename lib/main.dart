@@ -1,4 +1,5 @@
 import 'package:esp32/application/view/setup_page.dart';
+import 'package:esp32/application/view_model/activity_list_viewmodel.dart';
 import 'package:esp32/application/view_model/scratch_program_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -9,9 +10,8 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => SetupViewModel()),
-        ChangeNotifierProvider(
-          create: (_) => ScratchProgramViewModel(selectedClass: 3),
-        ), // Default class
+        ChangeNotifierProvider(create: (_) => ScratchProgramViewModel(selectedClass: 3)),
+        ChangeNotifierProvider(create: (_) => ActivityListViewModel()),
       ],
       child: const MyApp(),
     ),

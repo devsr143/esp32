@@ -22,7 +22,7 @@ class WifiService {
   Future<bool> isEsp32Connected() async {
     try {
       // Try to ping the default ESP32 IP address
-      final response = await http.get(Uri.parse('http://192.168.4.1')).timeout(const Duration(seconds: 3));
+      await http.get(Uri.parse('http://192.168.4.1')).timeout(const Duration(seconds: 3));
       // If we get any response, we can reach it
       return true;
     } catch (e) {

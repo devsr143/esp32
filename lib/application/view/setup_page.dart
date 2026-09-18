@@ -1,14 +1,15 @@
-import 'package:esp32/application/view/scratch/scratch_program_page.dart';
+import 'dart:async';
 import 'package:esp32/application/view_model/setup_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:esp32/application/view/activity_listpage.dart';
 
 class SetupPage extends StatelessWidget {
   const SetupPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // SetupViewModel is registered globally in main.dart.
     return const _SetupView();
   }
 }
@@ -22,11 +23,20 @@ class _SetupView extends StatefulWidget {
 
 class _SetupViewState extends State<_SetupView>
     with WidgetsBindingObserver {
+  Timer? _connectionTimer;
+
   @override
   void initState() {
     super.initState();
-
     WidgetsBinding.instance.addObserver(this);
+    
+    _connectionTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (!mounted) return;
+      final vm = context.read<SetupViewModel>();
+      if (!vm.isEsp32Connected && !vm.isCheckingConnection) {
+        vm.checkWifiStatus();
+      }
+    });
   }
 
   @override
@@ -38,47 +48,73 @@ class _SetupViewState extends State<_SetupView>
 
   @override
   void dispose() {
+    _connectionTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
-
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text(
-          'Knowli Bot Setup',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
+        backgroundColor: Colors.transparent,
       ),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 500,
-              ),
-              child: Column(
-                children: [
-                  buildHeader(),
-
-                  const SizedBox(height: 20),
-
-                  buildConnectionCard(),
-
-                  const SizedBox(height: 16),
-
-                  buildClassCard(),
-
-                  const SizedBox(height: 16),
-
-                  buildStatusCard(),
-                ],
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/background/background.jpeg'),
+          fit: BoxFit.cover)
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: 500,
+                ),
+                child: Column(
+                  children: [
+                    buildHeader(),
+                    const SizedBox(height: 200),
+                    Consumer<SetupViewModel>(
+                      builder: (context, vm, child) {
+                        return AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 500),
+                          transitionBuilder: (child, animation) {
+                            final isClassCard = child.key == const ValueKey('classCard');
+                            final offsetAnimation = Tween<Offset>(
+                              begin: Offset(isClassCard ? 1.0 : -1.0, 0.0),
+                              end: Offset.zero,
+                            ).animate(CurvedAnimation(
+                              parent: animation,
+                              curve: Curves.easeInOut,
+                            ));
+                            return FadeTransition(
+                              opacity: animation,
+                              child: SlideTransition(
+                                position: offsetAnimation,
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: vm.isEsp32Connected
+                              ? KeyedSubtree(
+                                  key: const ValueKey('classCard'),
+                                  child: buildClassCard(),
+                                )
+                              : KeyedSubtree(
+                                  key: const ValueKey('connectionCard'),
+                                  child: buildConnectionCard(),
+                                ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -87,60 +123,41 @@ class _SetupViewState extends State<_SetupView>
     );
   }
 
-  // ===========================================================================
-  // HEADER
-  // ===========================================================================
-
   Widget buildHeader() {
     return Column(
+      mainAxisAlignment: .start,
+      crossAxisAlignment: .center,
       children: [
-        Container(
-          height: 90,
-          width: 90,
-          decoration: BoxDecoration(
-            color: Colors.deepPurple.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.smart_toy,
-            size: 52,
-            color: Colors.deepPurple,
+        Center(
+          child: Container(
+            height: 100,
+            width: 300,
+            decoration: BoxDecoration(
+              color: Colors.deepPurple.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Image(image: AssetImage('assets/images/Logo/Knowlibot.png'),fit: BoxFit.contain,),
           ),
         ),
-
         const SizedBox(height: 14),
-
-        const Text(
-          'Welcome to Knowli Bot',
-          style: TextStyle(
-            fontSize: 25,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-
-        const SizedBox(height: 6),
-
         Text(
-          'Connect your ESP32 and select a class',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Colors.grey.shade600,
-            fontSize: 14,
-          ),
+          '''Welcome to Knowli Bot\n an Edu Tech Robot''',
+          style: GoogleFonts.elsie(
+          fontSize: 25,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
         ),
       ],
     );
   }
 
-  // ===========================================================================
-  // CONNECTION CARD
-  // ===========================================================================
-
   Widget buildConnectionCard() {
     return Consumer<SetupViewModel>(
       builder: (context, vm, child) {
         return Card(
-          elevation: 2,
+          color: Colors.transparent.withValues(alpha: .8),
+          elevation: 10,
           child: Padding(
             padding: const EdgeInsets.all(18),
             child: Column(
@@ -158,13 +175,12 @@ class _SetupViewState extends State<_SetupView>
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
+                        color: Colors.white
                       ),
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 16),
-
                 Row(
                   children: [
                     Icon(
@@ -175,14 +191,12 @@ class _SetupViewState extends State<_SetupView>
                           ? Colors.green
                           : Colors.red,
                     ),
-
                     const SizedBox(width: 8),
-
                     Expanded(
                       child: Text(
                         vm.isEsp32Connected
-                            ? 'ESP32 Connected'
-                            : 'ESP32 Not Connected',
+                            ? 'KNOWLIBOT Connected'
+                            : 'KNOWLIBOT Not Connected',
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           color: vm.isEsp32Connected
@@ -193,56 +207,15 @@ class _SetupViewState extends State<_SetupView>
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 8),
-
-                Text(
-                  vm.wifiStatus,
-                  style: TextStyle(
-                    color: Colors.grey.shade700,
-                  ),
-                ),
-
                 const SizedBox(height: 14),
-
-                // Show Enable Wi-Fi when Wi-Fi is OFF.
-                if (!vm.isWifiEnabled)
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: vm.isCheckingConnection
-                          ? null
-                          : () async {
-                              await vm.openWifiSettings();
-                            },
-                      icon: const Icon(Icons.settings),
-                      label: const Text('Enable Wi-Fi'),
-                    ),
-                  ),
-
-                if (!vm.isWifiEnabled)
-                  const SizedBox(height: 10),
-
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: vm.isCheckingConnection
-                        ? null
-                        : vm.connectToEsp32,
-                    icon: vm.isCheckingConnection
-                        ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Icon(Icons.link),
-                    label: Text(
-                      vm.isCheckingConnection
-                          ? 'Checking...'
-                          : 'Check ESP32 Connection',
-                    ),
+                    onPressed: () {
+                      vm.openWifiSettings();
+                    },
+                    icon: const Icon(Icons.settings),
+                    label: const Text(' Enable wifi to check connection'),
                   ),
                 ),
               ],
@@ -252,10 +225,6 @@ class _SetupViewState extends State<_SetupView>
       },
     );
   }
-
-  // ===========================================================================
-  // CLASS CARD
-  // ===========================================================================
 
   Widget buildClassCard() {
     return Consumer<SetupViewModel>(
@@ -283,9 +252,7 @@ class _SetupViewState extends State<_SetupView>
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 16),
-
                 DropdownButtonFormField<int>(
                   initialValue: vm.selectedClass,
                   decoration: const InputDecoration(
@@ -297,7 +264,6 @@ class _SetupViewState extends State<_SetupView>
                     8,
                     (index) {
                       final classNumber = index + 3;
-
                       return DropdownMenuItem<int>(
                         value: classNumber,
                         child: Text('Class $classNumber'),
@@ -305,80 +271,20 @@ class _SetupViewState extends State<_SetupView>
                     },
                   ),
                   onChanged:
-                      (!vm.isEsp32Connected ||
-                              vm.isUploadingFirmware)
+                      (!vm.isEsp32Connected)
                           ? null
                           : vm.selectClass,
                 ),
-
-                const SizedBox(height: 12),
-
-                Text(
-                  'Selected BIN file:',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-
-                const SizedBox(height: 4),
-
-                Text(
-                  vm.selectedFirmwarePath ??
-                      'No BIN file found',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-
                 const SizedBox(height: 16),
-
-                if (vm.isUploadingFirmware)
-                  Column(
-                    children: [
-                      LinearProgressIndicator(
-                        value: vm.uploadProgress == 0
-                            ? null
-                            : vm.uploadProgress,
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      Text(
-                        '${(vm.uploadProgress * 100).toInt()}%',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-                    ],
-                  ),
-
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed:
-                        (!vm.isEsp32Connected ||
-                                vm.isUploadingFirmware)
+                        (!vm.isEsp32Connected)
                             ? null
-                            : () => _sendBin(context),
-                    icon: vm.isUploadingFirmware
-                        ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(Icons.upload_file),
-                    label: Text(
-                      vm.isUploadingFirmware
-                          ? 'Sending BIN...'
-                          : 'Send BIN & Continue',
-                    ),
+                            : () => _continue(context),
+                    icon: const Icon(Icons.arrow_forward),
+                    label: const Text('Continue'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.deepPurple,
                       foregroundColor: Colors.white,
@@ -396,69 +302,15 @@ class _SetupViewState extends State<_SetupView>
     );
   }
 
-  // ===========================================================================
-  // SEND BIN
-  // ===========================================================================
-
-  Future<void> _sendBin(BuildContext context) async {
+  void _continue(BuildContext context) {
     final vm = context.read<SetupViewModel>();
-
-    final success = await vm.uploadSelectedClassFirmware();
-
-    if (!context.mounted || !success) return;
-
-    await Future.delayed(
-      const Duration(milliseconds: 500),
-    );
-
-    if (!context.mounted) return;
-
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ScratchProgramPage(
+        builder: (_) => ActivityListPage(
           selectedClass: vm.selectedClass,
         ),
       ),
-    );
-  }
-
-  // ===========================================================================
-  // STATUS CARD
-  // ===========================================================================
-
-  Widget buildStatusCard() {
-    return Consumer<SetupViewModel>(
-      builder: (context, vm, child) {
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(
-                Icons.info_outline,
-                color: Colors.deepPurple,
-              ),
-
-              const SizedBox(width: 10),
-
-              Expanded(
-                child: Text(
-                  vm.status,
-                  style: const TextStyle(
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

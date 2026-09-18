@@ -29,6 +29,7 @@ class _ScratchProgramView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: const Color(0xFFF4F7FB),
 
       appBar: AppBar(
@@ -254,3 +255,5 @@ class _ScratchProgramView extends StatelessWidget {
     );
   }
 }
+
+

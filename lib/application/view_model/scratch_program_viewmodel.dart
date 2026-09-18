@@ -455,3 +455,4 @@ class ScratchProgramViewModel extends ChangeNotifier {
     super.dispose();
   }
 }
+

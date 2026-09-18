@@ -6,8 +6,7 @@ class FirmwareService {
   static const String otaUrl = '$baseUrl/update';
 
   // Must match the token in your ESP32 firmware.
-  static const String otaToken =
-      'change-me-to-something-long-and-random';
+  static const String otaToken = 'change-me-to-something-long-and-random';
 
   Future<Uint8List> loadFirmware(String assetPath) async {
     final ByteData data = await rootBundle.load(assetPath);
@@ -28,10 +27,7 @@ class FirmwareService {
     required Uint8List firmwareBytes,
     required int classNumber,
   }) async {
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse(otaUrl),
-    );
+    final request = http.MultipartRequest('POST', Uri.parse(otaUrl));
 
     request.headers['X-OTA-Token'] = otaToken;
 
@@ -65,6 +61,5 @@ class FirmwareUploadResult {
     required this.responseBody,
   });
 
-  bool get isSuccess =>
-      statusCode >= 200 && statusCode < 300;
+  bool get isSuccess => statusCode >= 200 && statusCode < 300;
 }

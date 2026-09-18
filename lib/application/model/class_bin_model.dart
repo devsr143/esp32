@@ -7,3 +7,4 @@ class ClassFirmwareModel {
     required this.assetPath,
   });
 }
+

@@ -203,14 +203,13 @@ class _SetupViewState extends State<_SetupView> with WidgetsBindingObserver {
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white70,
-                      // foregroundColor: Colors.deepPurple,
                     ),
                   ),
                 ),
                 SizedBox(height: 10),
                 Row(
                   children: [
-                    Icon(Icons.label_important,color: Colors.white,),
+                    Icon(Icons.label_important_outline,color: Colors.white,),
                     const Text(
                       " Make sure App connected to KNOWLIBOT",
                       style: TextStyle(color: Colors.white),
